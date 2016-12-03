@@ -83,7 +83,7 @@
     <link href="http://yoursite.com/2016/12/03/app%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F/"/>
     <id>http://yoursite.com/2016/12/03/app环境变量/</id>
     <published>2016-12-03T10:26:50.000Z</published>
-    <updated>2016-12-03T11:17:59.000Z</updated>
+    <updated>2016-12-03T15:51:00.000Z</updated>
     
     <content type="html"><![CDATA[<p>app开发中通常都会涉及到多个环境，Debug、Release等。环境切换时可能就会涉及到服务器url的切换，或者一些第三方sdk的appid的切换。最初我是通过在代码中添加变量的方式来设置环境的：<a id="more"></a></p>
 <figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">static</span> <span class="keyword">let</span> isRelease = <span class="literal">true</span></div><div class="line"><span class="keyword">static</span> <span class="keyword">let</span> serverURL = isRelease ? <span class="string">"prod server url"</span> : <span class="string">"dev server url"</span></div></pre></td></tr></table></figure>
@@ -114,7 +114,7 @@
 <p>这个时候新增加的build configuration并没有对应的pods的xcconfig，所以项目会报错。把新建的configuration 对应的set 设置为none</p>
 <p><img src="http://upload-images.jianshu.io/upload_images/1748971-e32ba6ac74eb4627.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="Snip20160814_6.png"></p>
 <p>命令行运行</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">pod install</div></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">pod install</div></pre></td></tr></table></figure>
 <p>完成之后如下图</p>
 <p><img src="http://upload-images.jianshu.io/upload_images/1748971-717b4fe3a5d646ab.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="Snip20160814_9.png"></p>
 <p>##2、新建并配置xcconfig文件</p>
@@ -134,7 +134,7 @@
 <p>ReleaseTestConfig:</p>
 <figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">#include <span class="string">"CommonConfig.xcconfig"</span></div><div class="line">#include <span class="string">"Pods/Target Support Files/Pods/Pods.releasetest.xcconfig"</span></div><div class="line">	</div><div class="line"><span class="type">APP_DISPLAY_NAME</span> = 正式服</div><div class="line"><span class="type">CONFIG_FLAG</span> = <span class="type">RELEASE_TEST</span></div></pre></td></tr></table></figure>
 <p>其中：</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">#include <span class="string">"Pods/Target Support Files/Pods/Pods.releasetest.xcconfig"</span></div><div class="line">```	</div><div class="line"></div><div class="line">可能会因为项目名称的不同导致路径不同，如果不太确定的可以再次pod install。pods会给出提示，其中包含了正确的路径。	</div><div class="line">```swift</div><div class="line">&gt;[!] <span class="type">CocoaPods</span> did not <span class="keyword">set</span> the base configuration of your project because your project already has a custom config <span class="keyword">set</span>. <span class="type">In</span> order <span class="keyword">for</span> <span class="type">CocoaPods</span> integration to work at all, please either <span class="keyword">set</span> the base configurations of the target `configTest` to `<span class="type">Pods</span>/<span class="type">Target</span> <span class="type">Support</span> <span class="type">Files</span>/<span class="type">Pods</span>/<span class="type">Pods</span>.debug.xcconfig` or include the `<span class="type">Pods</span>/<span class="type">Target</span> <span class="type">Support</span> <span class="type">Files</span>/<span class="type">Pods</span>/<span class="type">Pods</span>.debug.xcconfig` <span class="keyword">in</span> your build configuration.</div></pre></td></tr></table></figure>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">#include <span class="string">"Pods/Target Support Files/Pods/Pods.releasetest.xcconfig"</span></div><div class="line">```	</div><div class="line"></div><div class="line">可能会因为项目名称的不同导致路径不同，如果不太确定的可以再次pod install。pods会给出提示，其中包含了正确的路径。	</div><div class="line">```bash</div><div class="line">&gt;[!] <span class="type">CocoaPods</span> did not <span class="keyword">set</span> the base configuration of your project because your project already has a custom config <span class="keyword">set</span>. <span class="type">In</span> order <span class="keyword">for</span> <span class="type">CocoaPods</span> integration to work at all, please either <span class="keyword">set</span> the base configurations of the target `configTest` to `<span class="type">Pods</span>/<span class="type">Target</span> <span class="type">Support</span> <span class="type">Files</span>/<span class="type">Pods</span>/<span class="type">Pods</span>.debug.xcconfig` or include the `<span class="type">Pods</span>/<span class="type">Target</span> <span class="type">Support</span> <span class="type">Files</span>/<span class="type">Pods</span>/<span class="type">Pods</span>.debug.xcconfig` <span class="keyword">in</span> your build configuration.</div></pre></td></tr></table></figure>
 <p>完成以上后，把build configuration切换成对应的新建的文件：</p>
 <p><img src="http://upload-images.jianshu.io/upload_images/1748971-f1a525371228d3c3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="Snip20160814_10.png"></p>
 <p>##2、设置环境变量</p>
@@ -191,7 +191,7 @@
     <link href="http://yoursite.com/2016/12/03/MMNavigationBar/"/>
     <id>http://yoursite.com/2016/12/03/MMNavigationBar/</id>
     <published>2016-12-03T09:16:41.000Z</published>
-    <updated>2016-12-03T10:36:23.000Z</updated>
+    <updated>2016-12-03T15:48:20.000Z</updated>
     
     <content type="html"><![CDATA[<p>这是一个非常方便易用的NavigationController，使用系统的导航栏，并且能够像设置ViewController的属性一样来设置：颜色、隐藏、手势 等属性。</p>
 <p>非常适合不同页面 导航栏颜色不同的需求。</p>
@@ -217,7 +217,7 @@
 <p>主要实现是参考了<a href="https://github.com/forkingdog/FDFullscreenPopGesture" target="_blank" rel="external">FDFullscreenPopGesture</a></p>
 <p>运用AOP, 在<code>viewWillAppear</code>中进行属性的设置。</p>
 <p>##Cocoapods</p>
-<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">pod '<span class="type">MMNavigationController'</span></div></pre></td></tr></table></figure>]]></content>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">pod <span class="string">'MMNavigationController'</span></div></pre></td></tr></table></figure>]]></content>
     
     <summary type="html">
     
