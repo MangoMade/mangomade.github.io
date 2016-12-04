@@ -1,0 +1,54 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="author" content="Roxily"><meta name="description" content="tableView再常见不过了，现在的项目中基本上都会用到很多tableView。并且很多时候tableView上每一行的内容都不同。如果你有这样的需求：一个展现用户信息的页面，有的cell最右侧是图片，有的cell最右侧显示的是文本（名字、手机号、性别、余额）Or:"><meta name="keywords" content="iOS,Swift"><title>运用泛型实现不重用的UITableView · Roxily's Blog</title><link rel="icon" href="/favicon.ico"><link rel="canonical" href="http://yoursite.com/2016/12/01/运用泛型实现不重用的UITableView/"><link rel="alternate" href="/atom.xml" title="Roxily's Blog"><link rel="stylesheet" href="/css/style.css"><script type="text/javascript">var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?Your baidu Analytics ID";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script type="text/javascript">(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'Your Google Analytics ID', 'auto');
+ga('send', 'pageview');</script></head><body><div id="main"><header><a href="/." class="logo">Roxily's Blog</a><ul class="nav"><li class="nav-link"><a href="/" target="_self">Home</a></li><li class="nav-link"><a href="/archives/" target="_self">Archives</a></li><li class="nav-link"><a href="/tags/" target="_self">Tags</a></li><li class="nav-link"><a href="/about/" target="_self">About</a></li></ul></header><section id="container"><article class="post"><h1 class="post-title">运用泛型实现不重用的UITableView</h1><span class="post-time">Dec 1, 2016</span><div class="post-content"><p><code>tableView</code>再常见不过了，现在的项目中基本上都会用到很多<code>tableView</code>。并且很多时候<code>tableView</code>上每一行的内容都不同。</p>
+<p>如果你有这样的需求：</p>
+<blockquote>
+<p>一个展现用户信息的页面，有的<code>cell</code>最右侧是图片，有的<code>cell</code>最右侧显示的是文本（名字、手机号、性别、余额）</p>
+</blockquote>
+<p>Or:</p>
+<blockquote>
+<p>一个填写用户信息的列表，有各种各样的<code>textField</code></p>
+</blockquote>
+<a id="more"></a>
+<p>上述的两种页面有两个共同的特点：</p>
+<ul>
+<li><p><code>tableViewCell</code>的数量有限，并且数量不大。不需要重用<code>cell</code>也能搞定。</p>
+</li>
+<li><p>比起写出多个<code>cell</code>子类去适应这些情况，不如把这些<code>label</code>或者<code>textfield</code>作为<code>viewControler</code>的熟悉，在<code>tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath)</code>代理方法中把这些特定控件加到<code>cell</code>上，修改或者获取这些控件时非常方便。</p>
+</li>
+</ul>
+<p>然而这个时候<code>tableView的cell</code>重用机制就非常棘手：</p>
+<ul>
+<li><p>注册多种<code>cell</code>很麻烦，在这种情况下很多余。</p>
+</li>
+<li><p>很多人应该遇到过的情况，重用<code>cell</code>会让视图变得很混乱，一些图片或空间因为重用的出现在了不该出现的地方</p>
+</li>
+</ul>
+<p>在<code>storyBoard</code>中可以设置<code>static cell</code>，来关闭重用。可是如果<code>tableView</code>是用代码建立的，就没有某个系统库的方法能够设置<code>static cell</code>。</p>
+<p>于是在<code>swift</code>下我写了一个简单的<code>extension</code>可以实现关闭重用的效果。实现原理也非常简单，<strong>show code</strong>:</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">extension</span> <span class="title">UITableView</span> </span>&#123;</div><div class="line">	</div><div class="line">    <span class="comment">/*</span></div><div class="line">     弹出一个静态的cell，无须注册重用，例如:</div><div class="line">     let cell: GrayLineTableViewCell = tableView.mm_dequeueStaticCell(indexPath)</div><div class="line">     即可返回一个类型为GrayLineTableViewCell的对象</div><div class="line">     </div><div class="line">     - parameter indexPath: cell对应的indexPath</div><div class="line">     - returns: 该indexPath对应的cell</div><div class="line">     */</div><div class="line">    <span class="function"><span class="keyword">func</span> <span class="title">mm_dequeueStaticCell</span>&lt;T: UITableViewCell&gt;<span class="params">(indexPath: NSIndexPath)</span></span> -&gt; <span class="type">T</span> &#123;</div><div class="line">        <span class="keyword">let</span> reuseIdentifier = <span class="string">"staticCellReuseIdentifier - <span class="subst">\(indexPath.description)</span>"</span></div><div class="line">        <span class="keyword">if</span> <span class="keyword">let</span> cell = <span class="keyword">self</span>.dequeueReusableCellWithIdentifier(reuseIdentifier) <span class="keyword">as</span>? <span class="type">T</span> &#123;</div><div class="line">            <span class="keyword">return</span> cell</div><div class="line">        &#125;<span class="keyword">else</span> &#123;</div><div class="line">            <span class="keyword">let</span> cell = <span class="type">T</span>(style: .<span class="type">Default</span>, reuseIdentifier: reuseIdentifier)</div><div class="line">            <span class="keyword">return</span> cell</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>无须注册。</p>
+<p>将<code>cell</code>直接声明为其需要的类型，改方法会自动返回这个类型的<code>cell</code>。</p>
+<p>最后：</p>
+<p>泛型函数的调用必须是以下写法：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">let</span> cell: <span class="type">GrayLineTableViewCell</span> = tableView.mm_dequeueStaticCell(indexPath)</div><div class="line">```	</div><div class="line"></div><div class="line">如果写成：</div><div class="line"></div><div class="line">```swift	</div><div class="line"><span class="keyword">let</span> cell = tableView.mm_dequeueStaticCell&lt;<span class="type">GrayLineTableViewCell</span>&gt;(indexPath)</div></pre></td></tr></table></figure>
+<p>将会报错，这种写法只适用于 泛型类型，不适用于 泛型函数</p>
+</div></article><div class="tags"><a href="/tags/iOS/">iOS</a><a href="/tags/Swift/">Swift</a></div><div class="paginator"><a id="prev" href="/2016/12/02/updateConstraints/" data-title="-updateViewConstraints与-updateConstraints" class="prev"><i class="iconfont icon-left"></i><span>Prev</span></a></div><section id="comments"><div data-thread-key="http://yoursite.com/2016/12/01/运用泛型实现不重用的UITableView/index.html" data-title="运用泛型实现不重用的UITableView" data-url="http://yoursite.com/2016/12/01/运用泛型实现不重用的UITableView/index.html" class="ds-thread"></div><script type="text/javascript">var duoshuoQuery = {short_name: "mangomade" };
+(function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ds);
+})();</script></section></section><footer><div class="social"><a href="mailto:781132399@qq.com" title="email" class="iconfont icon-email"></a><a href="https://MangoMade.github.com" title="github" class="iconfont icon-github"></a><a href="/atom.xml" title="rss" class="iconfont icon-rss"></a></div><div class="copyright"><p class="power">Powered by <a href="https://hexo.io/">Hexo</a> and Theme by <a href="https://github.com/ahonn/hexo-theme-even"> Even</a></p><p class="since">&copy;2016<span class="heart"><i class="iconfont icon-heart"></i></span><span class="author">Roxily</span></p></div><div id="back2top"><i class="iconfont icon-up"></i></div></footer></div><script src="/js/zepto.min.js"></script><script src="/js/theme.js"></script></body></html>
