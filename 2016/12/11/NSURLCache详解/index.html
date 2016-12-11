@@ -1,0 +1,76 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="author" content="Roxily"><meta name="description" content="我读过一些开源项目的网络请求缓存的代码，基本上都是采用在本地存文件的方式进行缓存。如果你打算在你的项目中加入网络请求的缓存，可能你并不需要自己造一个轮子，了解一下NSURLCache就足够。这是一个Apple已经为你准备好了的网络请求缓存类。网上对这个类的介绍并不多，并且有的文"><meta name="keywords" content="iOS,NSURLCache,网络请求,缓存"><title>iOS网络请求缓存：NSURLCache详解 · Roxily's Blog</title><link rel="icon" href="/favicon.ico"><link rel="canonical" href="http://yoursite.com/2016/12/11/NSURLCache详解/"><link rel="alternate" href="/atom.xml" title="Roxily's Blog"><link rel="stylesheet" href="/css/style.css"><script type="text/javascript">var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?Your baidu Analytics ID";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script type="text/javascript">(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'Your Google Analytics ID', 'auto');
+ga('send', 'pageview');</script></head><body><div id="main"><header><a href="/." class="logo">Roxily's Blog</a><ul class="nav"><li class="nav-link"><a href="/" target="_self">Home</a></li><li class="nav-link"><a href="/archives/" target="_self">Archives</a></li><li class="nav-link"><a href="/tags/" target="_self">Tags</a></li><li class="nav-link"><a href="/about/" target="_self">About</a></li></ul></header><section id="container"><article class="post"><h1 class="post-title">iOS网络请求缓存：NSURLCache详解</h1><span class="post-time">Dec 11, 2016</span><div class="post-content"><p>我读过一些开源项目的网络请求缓存的代码，基本上都是采用在本地存文件的方式进行缓存。如果你打算在你的项目中加入网络请求的缓存，可能你并不需要自己造一个轮子，了解一下<code>NSURLCache</code>就足够。</p>
+<p>这是一个Apple已经为你准备好了的网络请求缓存类。网上对这个类的介绍并不多，并且有的文章讲得很不详细。希望这篇文章能让你对<code>NSURLCache</code>有一个比较详细的了解。<br><a id="more"></a></p>
+<p>#缓存</p>
+<p>首先，<code>NSURLCache</code>提供的是内存以及磁盘的综合缓存机制。许多文章谈到，使用<code>NSURLCache</code>之前需要在<code>AppDelegate</code>中缓存空间的设置：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">- (<span class="built_in">BOOL</span>)application:(<span class="built_in">UIApplication</span> *)application</div><div class="line">    didFinishLaunchingWithOptions:(<span class="built_in">NSDictionary</span> *)launchOptions</div><div class="line">&#123;</div><div class="line">  <span class="built_in">NSURLCache</span> *URLCache = [[<span class="built_in">NSURLCache</span> alloc] initWithMemoryCapacity:<span class="number">4</span> * <span class="number">1024</span> * <span class="number">1024</span></div><div class="line">                                                       diskCapacity:<span class="number">20</span> * <span class="number">1024</span> * <span class="number">1024</span></div><div class="line">                                                           diskPath:<span class="literal">nil</span>];</div><div class="line">  [<span class="built_in">NSURLCache</span> setSharedURLCache:URLCache];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>然而如果你不添加上面的代码，并且运行如下代码，可以看到：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">print</span>(<span class="type">NSURLCache</span>.sharedURLCache().diskCapacity)</div><div class="line"><span class="comment">//output:</span></div><div class="line"><span class="comment">//10000000</span></div><div class="line"></div><div class="line"><span class="built_in">print</span>(<span class="type">NSURLCache</span>.sharedURLCache().memoryCapacity)</div><div class="line"><span class="comment">//output:</span></div><div class="line"><span class="comment">//512000</span></div></pre></td></tr></table></figure>
+<p>也就是说，其实默认就已经设置好了512kb的内存缓存空间，以及10MB的磁盘缓存空间。可能你的代码中并没有写任何与<code>NSURLCache</code>有关的东西，但其实它已经默默的开始帮你进行缓存了。</p>
+<p>已经缓存上了，但是怎么使用缓存呢？请继续往下。</p>
+<p>#缓存策略</p>
+<p>####GET</p>
+<p>不用多说，<code>NSURLCache</code>只会对你的<code>GET</code>请求进行缓存。</p>
+<p>####NSURLRequestCachePolicy</p>
+<p><code>NSURLRequest</code>中有个属性：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="keyword">var</span> cachePolicy: <span class="type">NSURLRequestCachePolicy</span> &#123; <span class="keyword">get</span> &#125;</div></pre></td></tr></table></figure>
+<p>你可以通过这个属性来设置请求的缓存策略，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">public enum NSURLRequestCachePolicy : UInt &#123;</div><div class="line">    </div><div class="line">    case UseProtocolCachePolicy // 默认值</div><div class="line">    </div><div class="line">    case ReloadIgnoringLocalCacheData // 不使用缓存数据</div><div class="line">    case ReloadIgnoringLocalAndRemoteCacheData // Unimplemented</div><div class="line">    public static var ReloadIgnoringCacheData: NSURLRequestCachePolicy &#123; get &#125;</div><div class="line">    </div><div class="line">    case ReturnCacheDataElseLoad // 无论缓存是否过期都是用缓存，没有缓存就进行网络请求</div><div class="line">    case ReturnCacheDataDontLoad // 无论缓存是否过期都是用缓存，没有缓存也不会进行网络请求</div><div class="line">    </div><div class="line">    case ReloadRevalidatingCacheData // Unimplemented</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>其实其他几个值都比较好理解，唯独默认值<code>UseProtocolCachePolicy</code>让我不太懂。</p>
+<p>字面上的意思是<strong>按照协议的缓存策略进行缓存</strong>，那么这是什么协议呢？<strong>http协议</strong>。</p>
+<p><a href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html#sec13" target="_blank" rel="external">详细：RFC 2616, Section 13</a></p>
+<p>服务器返回的响应头中会有这样的字段：<code>Cache-Control: max-age</code> or <code>Cache-Control: s- maxage</code>，通过<code>Cache-Control</code>来指定缓存策略，<code>max-age</code>来表示过期时间。根据这些字段缓存机制再采用如下策略：</p>
+<ul>
+<li>如果本地没有缓存数据，则进行网络请求。</li>
+<li>如果本地有缓存，并且缓存没有失效，则使用缓存。</li>
+<li>如果缓存已经失效，则询问服务器数据是否改变，如果没改变，依然使用缓存，如果改变了则请求新数据。</li>
+<li>如果没有指定是否失效，那么系统将自己判断缓存是否失效。（通常认为是6-24小时的有效时间）</li>
+</ul>
+<p>其实我以前对<code>Cache-Control</code>之类的也并不太了解 T_T，自己默默的print了一下响应头，你可以看到：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">print</span>((response <span class="keyword">as</span>? <span class="type">NSHTTPURLResponse</span>)?.allHeaderFields)</div><div class="line"></div><div class="line"><span class="comment">//响应头中：Cache-Control: no-cache</span></div></pre></td></tr></table></figure>
+<p>这也就是为什么，虽然<code>NSURLCache</code>一直在默默的缓存，但是我并没有感受到，当然或许你那里不一样。这个<code>no-cache</code>就表示不缓存。</p>
+<p>这里要额外提一句，看到网上有同学说自己出现了某个请求数据一直使用缓存，没有被更新。这种情况可能就是服务器返回的<code>Cache-Control</code>有误。</p>
+<p>打开沙盒路径下的Library/Caches 中，你可以看到缓存文件：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/1748971-9be4a4eae967bc41.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="沙盒中的缓存文件.png"></p>
+<p>这可以说明存在磁盘上的数据是存在数据库里的，性能不用担心。打开数据库文件就可以看到请求的数据。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/1748971-f9120cbf4edcbd97.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="缓存数据.png"></p>
+<p>在<code>cfurl_cache_response</code>表中可以看到有一个字段是<code>request_key</code>，通过里面的值可以推断每一个<code>response</code>是通过请求的<code>url+参数</code>来作为<code>key</code>储存的。</p>
+<p>当然，经过我的多次试验，在<code>Cache-Control: no-cache</code>的情况下，<code>NSURLCache</code>也会进行缓存，但是并不使用缓存数据。</p>
+<p><strong>总结一下：</strong>默认情况下<code>NSURLCache</code>的缓存策略是根据http协议来的，服务器通过<code>Cache-Control: max-age</code>字段来告诉<code>NSURLCache</code>是否需要缓存数据。</p>
+<p>#缓存封装</p>
+<p>如果你不打算采用http协议的缓存策略，依然可以使用<code>NSURLCache</code>进行缓存。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">func</span> <span class="title">cachedResponseForRequest</span><span class="params">(request: NSURLRequest)</span></span> -&gt; <span class="type">NSCachedURLResponse</span>?</div></pre></td></tr></table></figure>
+<p>你可以通过这个方法，传入请求，来获取缓存。<code>NSCachedURLResponse</code>保存了上次请求的数据以及响应头。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">func</span> <span class="title">storeCachedResponse</span><span class="params">(cachedResponse: NSCachedURLResponse, forRequest request: NSURLRequest)</span></span></div></pre></td></tr></table></figure>
+<p><code>NSURLSessionDelegate</code>协议中有如下方法，可以对即将缓存的数据进行修改，添加userInfo,在代理方法中必须调用completionHandler，传入将要缓存的数据，如果传nil则表示不缓存。</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">optional</span> <span class="keyword">public</span> <span class="function"><span class="keyword">func</span> <span class="title">URLSession</span><span class="params">(session: NSURLSession, </span></span></div><div class="line">                               dataTask: NSURLSessionDataTask, </div><div class="line">	 willCacheResponse proposedResponse: NSCachedURLResponse, </div><div class="line">                      completionHandler: <span class="params">(NSCachedURLResponse?)</span> -&gt; <span class="type">Void</span>)</div></pre></td></tr></table></figure>
+<p>在<code>Alamofire</code>中可以这样写：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">  <span class="type">Alamofire</span>.<span class="type">Manager</span></div><div class="line">  .sharedInstance</div><div class="line">  .delegate</div><div class="line">  .dataTaskWillCacheResponse = &#123; (session, task, cachedResponse) -&gt; <span class="type">NSCachedURLResponse</span>? <span class="keyword">in</span></div><div class="line"><span class="keyword">var</span> userInfo = [<span class="type">NSObject</span> : <span class="type">AnyObject</span>]()</div><div class="line"></div><div class="line"><span class="keyword">return</span> <span class="type">NSCachedURLResponse</span>(response: cachedResponse.response,</div><div class="line">                                      data: cachedResponse.data,</div><div class="line">                                      userInfo: userInfo,</div><div class="line">                                      storagePolicy: cachedResponse.storagePolicy)</div><div class="line">       &#125;</div></pre></td></tr></table></figure>
+<p>#参考</p>
+<p><a href="https://mangomade.github.io" target="_blank" rel="external">我的blog：Roxily’s Blog</a></p>
+<p>我也只是简单的对<code>NSURLCache</code>进行了介绍，需要深入了解的话大家还是需要拜读一下文章，希望能给大家一些帮助：</p>
+<ul>
+<li><a href="http://nshipster.com/nsurlcache/" target="_blank" rel="external">NSURLCache</a></li>
+<li><a href="https://blackpixel.com/writing/2012/05/caching-and-nsurlconnection.html" target="_blank" rel="external">Caching and NSURLConnection</a></li>
+<li><a href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html#sec13" target="_blank" rel="external">RFC 2616, Section 13</a></li>
+</ul>
+</div></article><div class="tags"><a href="/tags/iOS/">iOS</a><a href="/tags/NSURLCache/">NSURLCache</a><a href="/tags/网络请求/">网络请求</a><a href="/tags/缓存/">缓存</a></div><div class="paginator"><a id="next" href="/2016/12/04/MMNavigationBar/" data-title="随意修改NavigationBar颜色、附带全屏手势的NavigationController" class="next"><span>Next</span><i class="iconfont icon-right"></i></a></div><section id="comments"><div data-thread-key="http://yoursite.com/2016/12/11/NSURLCache详解/index.html" data-title="iOS网络请求缓存：NSURLCache详解" data-url="http://yoursite.com/2016/12/11/NSURLCache详解/index.html" class="ds-thread"></div><script type="text/javascript">var duoshuoQuery = {short_name: "mangomade" };
+(function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ds);
+})();</script></section></section><footer><div class="social"><a href="mailto:781132399@qq.com" title="email" class="iconfont icon-email"></a><a href="https://MangoMade.github.com" title="github" class="iconfont icon-github"></a><a href="/atom.xml" title="rss" class="iconfont icon-rss"></a></div><div class="copyright"><p class="power">Powered by <a href="https://hexo.io/">Hexo</a> and Theme by <a href="https://github.com/ahonn/hexo-theme-even"> Even</a></p><p class="since">&copy;2016<span class="heart"><i class="iconfont icon-heart"></i></span><span class="author">Roxily</span></p></div><div id="back2top"><i class="iconfont icon-up"></i></div></footer></div><script src="/js/zepto.min.js"></script><script src="/js/theme.js"></script></body></html>
