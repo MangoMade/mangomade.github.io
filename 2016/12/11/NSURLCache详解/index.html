@@ -37,7 +37,7 @@ ga('send', 'pageview');</script></head><body><div id="main"><header><a href="/."
 </ul>
 <p>其实我以前对<code>Cache-Control</code>之类的也并不太了解 T_T，自己默默的print了一下响应头，你可以看到：</p>
 <figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">print</span>((response <span class="keyword">as</span>? <span class="type">NSHTTPURLResponse</span>)?.allHeaderFields)</div><div class="line"></div><div class="line"><span class="comment">//响应头中：Cache-Control: no-cache</span></div></pre></td></tr></table></figure>
-<p>这也就是为什么，虽然<code>NSURLCache</code>一直在默默的缓存，但是我并没有感受到，当然或许你那里不一样。这个<code>no-cache</code>就表示不缓存。</p>
+<p>这也就是为什么，虽然<code>NSURLCache</code>一直在默默的缓存，但是我并没有感受到，当然或许你那里不一样。<del>这个<code>no-cache</code>就表示不缓存。</del><strong>（勘误）</strong> <em>修正：no-cache表示不使用缓存，但是会缓存，no-store表示是不进行缓存。</em></p>
 <p>这里要额外提一句，看到网上有同学说自己出现了某个请求数据一直使用缓存，没有被更新。这种情况可能就是服务器返回的<code>Cache-Control</code>有误。</p>
 <p>打开沙盒路径下的Library/Caches 中，你可以看到缓存文件：</p>
 <p><img src="https://user-gold-cdn.xitu.io/2016/12/11/ca10144bb74a4b98f8a8ed435640e5f3" alt="沙盒中的缓存文件.png"></p>
