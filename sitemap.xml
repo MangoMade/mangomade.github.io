@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://yoursite.com/about/index.html</loc>
+    
+    <lastmod>2017-04-30T10:40:23.000Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://yoursite.com/2016/12/11/NSURLCache%E8%AF%A6%E8%A7%A3/</loc>
     
     <lastmod>2016-12-27T05:28:09.000Z</lastmod>
@@ -33,13 +40,6 @@
     <loc>http://yoursite.com/2016/12/02/updateConstraints/</loc>
     
     <lastmod>2016-12-04T07:06:12.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://yoursite.com/about/index.html</loc>
-    
-    <lastmod>2016-12-04T07:05:09.000Z</lastmod>
     
   </url>
   
